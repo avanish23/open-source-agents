@@ -30,9 +30,12 @@ func newLLM(ctx context.Context) (model.LLM, string, error) {
 
 	switch provider {
 	case "openai":
-		apiKey := os.Getenv("OPENAI_API_KEY")
-		if apiKey == "" {
-			return nil, "", fmt.Errorf("LLM_PROVIDER=openai requires OPENAI_API_KEY")
+		apiKey := strings.TrimSpace(os.Getenv("OPENAI_API_KEY"))
+		if apiKey == "" || strings.Contains(apiKey, "your_openai") {
+			return nil, "", fmt.Errorf("LLM_PROVIDER=openai requires a valid OPENAI_API_KEY in the environment or .env file")
+		}
+		if !strings.HasPrefix(apiKey, "sk-proj-") && !strings.HasPrefix(apiKey, "sk-") {
+			return nil, "", fmt.Errorf("OPENAI_API_KEY does not look like an OpenAI secret key (expected sk- or sk-proj- prefix)")
 		}
 		if modelName == "" {
 			modelName = "gpt-4o-mini"

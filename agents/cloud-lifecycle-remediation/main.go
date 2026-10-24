@@ -44,6 +44,8 @@ type deprecationEvent struct {
 }
 
 func main() {
+	loadDotEnvFromWorkingTree()
+
 	ctx := context.Background()
 
 	llm, modelName, err := newLLM(ctx)

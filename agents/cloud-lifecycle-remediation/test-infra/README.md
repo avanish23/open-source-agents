@@ -1,0 +1,45 @@
+# test-infra (demo Terraform)
+
+Sample AWS Terraform layouts for the Cloud Lifecycle Remediation Agent. **Not wired to real AWS** — placeholders only.
+
+## Layout
+
+| File | Scenario |
+|------|----------|
+| `eks-production.tf` | EKS `production-core` at **1.28** + vpc-cni, coredns, kube-proxy |
+| `eks-staging.tf` | EKS `staging-platform` at **1.29** + add-ons |
+| `rds-postgres.tf` | Postgres **14.10** + `postgres14` parameter group |
+| `rds-mysql.tf` | MySQL **8.0.35** + `mysql8.0` parameter group |
+
+## Example agent events
+
+**EKS (default demo):**
+
+```bash
+go run . '{"service":"EKS","resource_name":"production-core","current_version":"1.28","target_version":"1.30","eos_deadline":"2026-11-30","repo_dir":"./test-infra"}'
+```
+
+**EKS staging:**
+
+```bash
+go run . '{"service":"EKS","resource_name":"staging-platform","current_version":"1.29","target_version":"1.30","eos_deadline":"2026-12-15","repo_dir":"./test-infra"}'
+```
+
+**RDS Postgres:**
+
+```bash
+go run . '{"service":"RDS","resource_name":"analytics-db","current_version":"14","target_version":"16","eos_deadline":"2026-10-01","repo_dir":"./test-infra"}'
+```
+
+**RDS MySQL:**
+
+```bash
+go run . '{"service":"RDS","resource_name":"payments-ledger","current_version":"8.0.35","target_version":"8.0.39","eos_deadline":"2026-09-30","repo_dir":"./test-infra"}'
+```
+
+## Validate locally
+
+```bash
+terraform -chdir=test-infra init -backend=false
+terraform -chdir=test-infra validate
+```

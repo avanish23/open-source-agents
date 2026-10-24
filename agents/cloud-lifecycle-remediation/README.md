@@ -87,6 +87,8 @@ go mod download
 
 ## How to Run
 
+Sample Terraform lives under [`test-infra/`](./test-infra/) (EKS + RDS examples). See [`test-infra/README.md`](./test-infra/README.md) for all demo events.
+
 Default demo event (EKS `production-core` 1.28 → 1.30 in `./test-infra`):
 
 ```bash
