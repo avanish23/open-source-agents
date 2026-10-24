@@ -3,7 +3,7 @@
 resource "aws_eks_cluster" "staging-platform" {
   name     = "staging-platform"
   role_arn = "arn:aws:iam::123456789012:role/eks-cluster-staging"
-  version  = "1.29"
+  version  = "1.30"
 
   vpc_config {
     subnet_ids = ["subnet-stg-a", "subnet-stg-b"]

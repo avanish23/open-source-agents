@@ -11,8 +11,8 @@
 
 # Terraform
 test-infra/.terraform/
-test-infra/.terraform.lock.hcl
 test-infra/terraform.tfstate*
+test-infra/.git/
 
 # OS / editor
 .DS_Store

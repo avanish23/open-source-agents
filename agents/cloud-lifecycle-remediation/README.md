@@ -52,7 +52,7 @@
 ## Prerequisites
 
 - Go 1.26 or newer
-- Terraform 1.5+ (`terraform` on `PATH`) for validation
+- Terraform 1.5+ on `PATH` for validation (macOS: `brew tap hashicorp/tap && brew install hashicorp/tap/terraform`)
 - **OpenAI** (`OPENAI_API_KEY`) or **Gemini** (`GOOGLE_API_KEY` / `GEMINI_API_KEY`)
 - Optional for real PRs: `git`, `gh`, and a configured Git remote
 

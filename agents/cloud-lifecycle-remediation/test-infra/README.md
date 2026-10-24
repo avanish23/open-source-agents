@@ -39,6 +39,15 @@ go run . '{"service":"RDS","resource_name":"payments-ledger","current_version":"
 
 ## Validate locally
 
+Install Terraform if needed (Homebrew no longer ships `terraform` in core):
+
+```bash
+brew tap hashicorp/tap
+brew install hashicorp/tap/terraform
+```
+
+Then:
+
 ```bash
 terraform -chdir=test-infra init -backend=false
 terraform -chdir=test-infra validate
