@@ -22,9 +22,9 @@ const systemInstruction = `You are the Cloud Lifecycle Remediation Agent. Your j
 
 Protocol:
 1. Inspect the incoming deprecation event JSON.
-2. Call ScanTerraformConfigs to locate Terraform definitions for the resource and related components (EKS add-ons or RDS parameter groups).
-3. Call FetchVersionUpgradeGuidance for breaking changes, parameter group shifts, and required add-on version bumps.
-4. Call PatchTerraformFile for each file that must change. Use AssociatedUpdates keys formatted as type.name.attribute (for example aws_eks_addon.vpc_cni.addon_version).
+2. Call ScanTerraformConfigs with the correct resource_type and value_attribute (version, engine_version, instance_class, instance_type, or instance_types).
+3. Call FetchVersionUpgradeGuidance using the event service (EKS, RDS, RDS_INSTANCE, EC2, EKS_NODEGROUP).
+4. Call PatchTerraformFile with target_attribute when patching instance classes/types. Use AssociatedUpdates keys formatted as type.name.attribute (for example aws_eks_addon.vpc_cni.addon_version).
 5. Call RunTerraformValidate on the repo directory. If validation fails, read the error output, repair with PatchTerraformFile, and validate again.
 6. Call CreateRemediationPR on a bot branch only (for example bot/deprecations-eks-production-core). Never merge to main, never push to main/master, and never modify files outside the provided repo_dir.
 7. Respond with a concise summary: modified attributes, validation status, migration checklist highlights, EoS deadline, and PR URL.
@@ -32,7 +32,7 @@ Protocol:
 Safety guardrails:
 - Do not delete unrelated resources.
 - Do not edit branches named main or master.
-- Prefer minimal diffs that only bump versions and directly related add-on or parameter group fields.`
+- Prefer minimal diffs that only bump targeted lifecycle fields (versions, instance classes/types) and directly related add-on or parameter group fields.`
 
 type deprecationEvent struct {
 	Service        string `json:"service"`
@@ -62,7 +62,7 @@ func main() {
 	remediationAgent, err := llmagent.New(llmagent.Config{
 		Name:        "cloud_lifecycle_remediation_agent",
 		Model:       llm,
-		Description: "Autonomous agent that patches Terraform for AWS EKS/RDS version deprecations.",
+		Description: "Autonomous agent that patches Terraform for AWS EKS/RDS version and instance-type deprecations.",
 		Instruction: systemInstruction,
 		Tools:       tools,
 	})
@@ -84,9 +84,9 @@ func main() {
 		}
 	}
 
-	resourceType := "aws_eks_cluster"
-	if strings.EqualFold(event.Service, "RDS") {
-		resourceType = "aws_db_instance"
+	mapping, err := remediation.EventMappingForService(event.Service)
+	if err != nil {
+		log.Fatalf("event service: %v", err)
 	}
 
 	prompt := fmt.Sprintf(`Process this AWS deprecation remediation event and execute the full protocol:
@@ -95,12 +95,15 @@ func main() {
 %s
 `+"```"+`
 
-Use resource_type %q when scanning. Suggested branch: bot/deprecations-%s-%s.
+Use resource_type %q and value_attribute %q when scanning.
+Use service %q for FetchVersionUpgradeGuidance.
+Set target_attribute %q on PatchTerraformFile for the primary resource.
+Suggested branch: bot/deprecations-%s-%s.
 Draft PR description must include:
 - EoS deadline (%s)
 - Migration checklist from guidance
 - Summary of Terraform attribute changes
-`, mustJSON(event), resourceType, strings.ToLower(event.Service), event.ResourceName, event.EOSDeadline)
+`, mustJSON(event), mapping.ResourceType, mapping.ValueAttribute, mapping.GuidanceService, mapping.ValueAttribute, strings.ToLower(event.Service), event.ResourceName, event.EOSDeadline)
 
 	appName := "cloud-lifecycle-remediation"
 	userID := "lifecycle-bot"
@@ -150,7 +153,7 @@ func buildTools() ([]tool.Tool, error) {
 	scanTool, err := functiontool.New(
 		functiontool.Config{
 			Name:        "ScanTerraformConfigs",
-			Description: "Scans Terraform .tf files for a resource block and extracts version or engine_version plus related files.",
+			Description: "Scans .tf files for a resource and extracts the targeted attribute (version, engine_version, instance_class, instance_type, instance_types) plus related files.",
 		},
 		remediation.ScanTerraformConfigsTool,
 	)

@@ -64,6 +64,50 @@ resource "aws_eks_addon" "vpc_cni" {
 	}
 }
 
+func TestScanAndPatchRDSInstanceClass(t *testing.T) {
+	dir := t.TempDir()
+	tf := filepath.Join(dir, "rds.tf")
+	content := `resource "aws_db_instance" "analytics-db" {
+  engine         = "postgres"
+  instance_class = "db.r4.large"
+}
+`
+	if err := os.WriteFile(tf, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	scan, err := remediation.ScanTerraformConfigs(context.Background(), remediation.ScanTerraformConfigsArgs{
+		RepoDir:        dir,
+		ResourceType:   "aws_db_instance",
+		ResourceName:   "analytics-db",
+		ValueAttribute: "instance_class",
+	})
+	if err != nil || scan.Error != "" || scan.CurrentVersion != "db.r4.large" {
+		t.Fatalf("scan: %+v err=%v", scan, err)
+	}
+
+	patch, err := remediation.PatchTerraformFile(context.Background(), remediation.PatchTerraformFileArgs{
+		FilePath:        tf,
+		TargetResource:  "aws_db_instance.analytics-db",
+		NewVersion:      "db.r6g.large",
+		TargetAttribute: "instance_class",
+	})
+	if err != nil || !patch.Success {
+		t.Fatalf("patch: %+v err=%v", patch, err)
+	}
+}
+
+func TestFetchGuidanceRDSInstance(t *testing.T) {
+	g, err := remediation.FetchVersionUpgradeGuidance(context.Background(), remediation.FetchVersionUpgradeGuidanceArgs{
+		Service:     "RDS_INSTANCE",
+		FromVersion: "db.r4.large",
+		ToVersion:   "db.r6g.large",
+	})
+	if err != nil || len(g.BreakingChanges) == 0 {
+		t.Fatalf("guidance: %+v err=%v", g, err)
+	}
+}
+
 func TestFetchGuidanceEKS(t *testing.T) {
 	g, err := remediation.FetchVersionUpgradeGuidance(context.Background(), remediation.FetchVersionUpgradeGuidanceArgs{
 		Service:     "EKS",

@@ -56,6 +56,37 @@ func extractAttribute(block, attrName string) string {
 	return m[1]
 }
 
+func extractPrimaryValue(block, attrName string) string {
+	if attrName == "instance_types" {
+		return extractInstanceTypes(block)
+	}
+	return extractAttribute(block, attrName)
+}
+
+func setPrimaryValue(block, attrName, newValue string) (string, bool) {
+	if attrName == "instance_types" {
+		return setInstanceTypesInBlock(block, newValue)
+	}
+	return setAttributeInBlock(block, attrName, newValue)
+}
+
+func extractInstanceTypes(block string) string {
+	re := regexp.MustCompile(`(?m)instance_types\s*=\s*\[\s*"([^"]+)"`)
+	m := re.FindStringSubmatch(block)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
+}
+
+func setInstanceTypesInBlock(block, newType string) (string, bool) {
+	re := regexp.MustCompile(`(?m)^(\s*instance_types\s*=\s*)\[[^\]]*\]`)
+	if re.FindStringIndex(block) == nil {
+		return block, false
+	}
+	return re.ReplaceAllString(block, `${1}["`+newType+`"]`), true
+}
+
 func setAttributeInBlock(block, attrName, newValue string) (string, bool) {
 	quoted := regexp.MustCompile(`(?m)^(\s*` + regexp.QuoteMeta(attrName) + `\s*=\s*)"([^"]+)"`)
 	if quoted.FindStringIndex(block) != nil {

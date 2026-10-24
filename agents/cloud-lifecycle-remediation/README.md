@@ -1,6 +1,6 @@
 # Cloud Lifecycle Remediation Agent
 
-> Autonomous Go agent (Google ADK) that patches Terraform for AWS EKS and RDS version deprecations, validates HCL, and opens draft remediation pull requests.
+> Autonomous Go agent (Google ADK) that patches Terraform for AWS EKS/RDS version deprecations and EC2/RDS/EKS instance-type retirements, validates HCL, and opens draft remediation pull requests.
 
 ---
 
@@ -11,7 +11,8 @@
 - **Intended Users**: Platform engineers, SREs, and cloud foundation teams managing Terraform-based AWS infrastructure.
 
 ### Key Features
-- Ingests structured deprecation events (service, resource, versions, deadline, repo path).
+- Ingests structured deprecation events (service, resource, current/target values, deadline, repo path).
+- Supports **EKS**, **RDS** engine versions, **RDS_INSTANCE** classes, **EC2** instance types, and **EKS_NODEGROUP** instance types.
 - Scans Terraform for target resources and related components (EKS add-ons, RDS parameter groups).
 - Applies targeted HCL patches with compatibility guidance from a curated lookup table.
 - Runs `terraform fmt` and `terraform validate` after patching.

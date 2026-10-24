@@ -4,19 +4,20 @@ package remediation
 type ScanTerraformConfigsArgs struct {
 	RepoDir      string `json:"repo_dir" jsonschema:"Absolute or relative path to the Terraform repository root to scan."`
 	ResourceType string `json:"resource_type" jsonschema:"Terraform resource type, e.g. aws_eks_cluster or aws_db_instance."`
-	ResourceName string `json:"resource_name" jsonschema:"Terraform resource block label (the name in quotes after the type)."`
+	ResourceName     string `json:"resource_name" jsonschema:"Terraform resource block label (the name in quotes after the type)."`
+	ValueAttribute   string `json:"value_attribute,omitempty" jsonschema:"Terraform attribute to read, e.g. version, engine_version, instance_class, instance_type, instance_types."`
 }
 
 // ScanTerraformConfigsResult summarizes files and the primary version attribute found.
 type ScanTerraformConfigsResult struct {
 	MatchedFiles   []string `json:"matched_files" jsonschema:"Paths to .tf files containing the target resource or related components."`
-	CurrentVersion string   `json:"current_version" jsonschema:"Current cluster version or RDS engine_version value."`
+	CurrentVersion string   `json:"current_version" jsonschema:"Current value of the targeted attribute (version, engine_version, instance class/type, etc.)."`
 	Error          string   `json:"error,omitempty" jsonschema:"Non-empty when the scan could not complete."`
 }
 
 // FetchVersionUpgradeGuidanceArgs requests compatibility notes for a version jump.
 type FetchVersionUpgradeGuidanceArgs struct {
-	Service     string `json:"service" jsonschema:"Cloud service: EKS or RDS."`
+	Service     string `json:"service" jsonschema:"EKS, RDS, RDS_INSTANCE, EC2, or EKS_NODEGROUP."`
 	FromVersion string `json:"from_version" jsonschema:"Currently deployed version."`
 	ToVersion   string `json:"to_version" jsonschema:"Target version after remediation."`
 }
@@ -33,7 +34,8 @@ type FetchVersionUpgradeGuidanceResult struct {
 type PatchTerraformFileArgs struct {
 	FilePath          string            `json:"file_path" jsonschema:"Path to the .tf file to patch."`
 	TargetResource    string            `json:"target_resource" jsonschema:"Terraform address, e.g. aws_eks_cluster.production-core."`
-	NewVersion        string            `json:"new_version" jsonschema:"New cluster version or engine_version."`
+	NewVersion        string            `json:"new_version" jsonschema:"New target value for the primary attribute (version, engine_version, instance class/type, etc.)."`
+	TargetAttribute   string            `json:"target_attribute,omitempty" jsonschema:"Primary attribute to patch when not the default for the resource type."`
 	AssociatedUpdates map[string]string `json:"associated_updates" jsonschema:"Map of terraform_address.attribute to new value, e.g. aws_eks_addon.vpc_cni.addon_version."`
 }
 

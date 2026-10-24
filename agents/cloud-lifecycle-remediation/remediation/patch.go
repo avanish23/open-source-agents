@@ -34,14 +34,14 @@ func PatchTerraformFile(_ context.Context, args PatchTerraformFileArgs) (PatchTe
 	}
 
 	block := content[start:end]
-	versionAttr := "version"
-	if resourceType == "aws_db_instance" {
-		versionAttr = "engine_version"
+	valueAttr := args.TargetAttribute
+	if valueAttr == "" {
+		valueAttr = defaultValueAttribute(resourceType)
 	}
-	updatedBlock, changed := setAttributeInBlock(block, versionAttr, args.NewVersion)
+	updatedBlock, changed := setPrimaryValue(block, valueAttr, args.NewVersion)
 	if !changed {
 		return PatchTerraformFileResult{
-			Error: fmt.Sprintf("attribute %s not found on %s", versionAttr, args.TargetResource),
+			Error: fmt.Sprintf("attribute %s not found on %s", valueAttr, args.TargetResource),
 		}, nil
 	}
 	content = content[:start] + updatedBlock + content[end:]
@@ -61,7 +61,7 @@ func PatchTerraformFile(_ context.Context, args PatchTerraformFileArgs) (PatchTe
 			}, nil
 		}
 		sub := content[s:e]
-		newSub, subChanged := setAttributeInBlock(sub, attr, newVal)
+		newSub, subChanged := setPrimaryValue(sub, attr, newVal)
 		if !subChanged {
 			return PatchTerraformFileResult{
 				Error: fmt.Sprintf("attribute %s not found on %s.%s", attr, resType, resName),
@@ -85,7 +85,7 @@ func summarizeDiff(before, after, path string) string {
 	fmt.Fprintf(&b, "Updated %s\n", path)
 	for _, line := range strings.Split(after, "\n") {
 		trim := strings.TrimSpace(line)
-		if strings.Contains(trim, "version") || strings.Contains(trim, "engine_version") || strings.Contains(trim, "addon_version") || strings.Contains(trim, "family") {
+		if strings.Contains(trim, "version") || strings.Contains(trim, "engine_version") || strings.Contains(trim, "addon_version") || strings.Contains(trim, "family") || strings.Contains(trim, "instance_class") || strings.Contains(trim, "instance_type") || strings.Contains(trim, "instance_types") {
 			fmt.Fprintf(&b, "  %s\n", strings.TrimRight(line, " "))
 		}
 	}

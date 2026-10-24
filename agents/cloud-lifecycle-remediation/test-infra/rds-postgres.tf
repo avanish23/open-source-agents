@@ -13,8 +13,8 @@ resource "aws_db_parameter_group" "analytics_postgres14" {
 resource "aws_db_instance" "analytics-db" {
   identifier             = "analytics-db"
   engine                 = "postgres"
-  engine_version         = "16"
-  instance_class         = "db.r6g.large"
+  engine_version         = "14.10"
+  instance_class         = "db.r4.large"
   allocated_storage      = 100
   db_name                = "analytics"
   username               = "dbadmin"

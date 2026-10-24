@@ -52,6 +52,28 @@ var guidanceTable = map[string]guidanceEntry{
 		newParamGroupFamily: "mysql8.0",
 		notes: "For minor MySQL bumps, parameter group family often stays mysql8.0.",
 	},
+	"RDS_INSTANCE:db.r4.large:db.r6g.large": {
+		breakingChanges: []string{
+			"Graviton (r6g) uses a different architecture; verify application ARM compatibility.",
+			"Plan a maintenance window; instance class change requires brief failover/restart.",
+			"Compare Performance Insights and max_connections after resize.",
+		},
+		notes: "Validate storage throughput and Multi-AZ behavior after moving off deprecated R4 classes.",
+	},
+	"EC2:m5.large:m7i.large": {
+		breakingChanges: []string{
+			"Confirm AMI and user-data scripts support the target instance family.",
+			"Update Auto Scaling launch templates or mixed instances policy if applicable.",
+		},
+		notes: "Review CPU credits (if switching burst families) and ENI limits for the new type.",
+	},
+	"EKS_NODEGROUP:m5.large:m7i.large": {
+		breakingChanges: []string{
+			"Launch a new node group with m7i.large, cordon/drain old nodes, then remove the old group.",
+			"Verify DaemonSets and PVC storage classes on new nodes.",
+		},
+		notes: "Control plane version and add-ons must remain compatible; update aws_eks_node_group instance_types.",
+	},
 }
 
 // FetchVersionUpgradeGuidance returns known compatibility rules for supported upgrade paths.

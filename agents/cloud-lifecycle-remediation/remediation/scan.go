@@ -44,11 +44,11 @@ func ScanTerraformConfigs(_ context.Context, args ScanTerraformConfigsArgs) (Sca
 
 		if start, end, ok := findResourceBlock(content, args.ResourceType, args.ResourceName); ok {
 			block := content[start:end]
-			versionAttr := "version"
-			if args.ResourceType == "aws_db_instance" {
-				versionAttr = "engine_version"
+			valueAttr := args.ValueAttribute
+			if valueAttr == "" {
+				valueAttr = defaultValueAttribute(args.ResourceType)
 			}
-			if v := extractAttribute(block, versionAttr); v != "" {
+			if v := extractPrimaryValue(block, valueAttr); v != "" {
 				currentVersion = v
 			}
 			matched = append(matched, path)
@@ -79,6 +79,19 @@ func ScanTerraformConfigs(_ context.Context, args ScanTerraformConfigsArgs) (Sca
 		MatchedFiles:   matched,
 		CurrentVersion: currentVersion,
 	}, nil
+}
+
+func defaultValueAttribute(resourceType string) string {
+	switch resourceType {
+	case "aws_db_instance":
+		return "engine_version"
+	case "aws_instance":
+		return "instance_type"
+	case "aws_eks_node_group":
+		return "instance_types"
+	default:
+		return "version"
+	}
 }
 
 func contains(slice []string, item string) bool {
